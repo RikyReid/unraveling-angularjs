@@ -4,6 +4,7 @@ angular.module('maintenance', ['ngRoute'])
     .controller('locationsCtrl', LocationsCtrl)
     .controller('sitesCtrl', SitesCtrl)
     .factory('currentSpot', currentSpot)
+    .directive('ywActiveMenu', ywActiveMenu)
     .config(function ($routeProvider) {
         $routeProvider.when('/locations', {
             templateUrl: 'views/locations.html',
@@ -22,11 +23,11 @@ angular.module('maintenance', ['ngRoute'])
 function AdminCtrl($scope, currentSpot) {
     $scope.isActive = isActive;
     $scope.getTitle = getTitle;
-    
+
     function isActive(menuId) {
         return currentSpot.getActiveMenu() == menuId;
     }
-    
+
     function getTitle() {
         return currentSpot.getTitle();
     }
@@ -50,14 +51,17 @@ function currentSpot() {
     }
 }
 
-function MainCtrl(currentSpot) {
-    currentSpot.setCurrentSpot('', '')
-}
+function MainCtrl(currentSpot) {}
 
-function LocationsCtrl(currentSpot) {
-    currentSpot.setCurrentSpot('Locations', 'Manage the list of diving locations');
-}
+function LocationsCtrl(currentSpot) {}
 
-function SitesCtrl(currentSpot) {
-    currentSpot.setCurrentSpot('Sites', 'Manage the list of dive sites');
+function SitesCtrl(currentSpot) {}
+
+function ywActiveMenu(currentSpot) {
+    return function (scope, element, attrs) {
+        var activeMenuId = attrs["ywActiveMenu"];
+        var activeTitle = attrs["ywActiveTitle"];
+        
+        currentSpot.setCurrentSpot(activeMenuId, activeTitle);
+    }
 }
