@@ -22,10 +22,10 @@
       <div class="collapse navbar-collapse" id="adminMenu">
         <ul class="nav navbar-nav">
           <li ng-class="{active: isActive('Locations')}">
-            <a href="#" ng-click="showLocations()">Locations</a>
+            <a href="#/locations" ng-click="showLocations()">Locations</a>
           </li>
           <li ng-class="{active: isActive('Sites')}">
-            <a href="#" ng-click="showDiveSites()">Dive Sites</a>
+            <a href="#/sites" ng-click="showDiveSites()">Dive Sites</a>
           </li>
         </ul>
       </div>
@@ -50,15 +50,7 @@
   <div class="main-content">
     <div class="container-fluid">
       <div class="container">
-        <div ng-show="view=='main'">
-          <div ng-include="'views/main.html'"></div>
-        </div>
-        <div ng-show="view=='locations'">
-          <div ng-include="'views/locations.html'"></div>
-        </div>
-        <div ng-show="view=='diveSites'">
-          <div ng-include="'views/sites.html'"></div>
-        </div>
+          <div ng-view></div>
       </div>
     </div>
   </div>
@@ -66,6 +58,7 @@
   <script src="jquery-2.1.4.min.js"></script>
   <script src="bootstrap.min.js"></script>
   <script src="angular.min.js"></script>
+  <script src="angular-route.min.js"></script>
   <script src="maintenance.js"></script>
 </body>
 </html>
