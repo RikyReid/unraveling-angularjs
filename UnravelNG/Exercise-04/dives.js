@@ -4,6 +4,7 @@ angular.module('diveLog', [])
 
 function DiveLogCtrl($scope, diveLogApi) {
     $scope.dives = [];
+    $scope.errorMessage = '';
     $scope.isLoading = isLoading;
     $scope.refreshDives = refreshDives;
 
@@ -16,15 +17,21 @@ function DiveLogCtrl($scope, diveLogApi) {
     function refreshDives() {
         loading = true;
         $scope.dives = [];
-        setTimeout(function () {
-            $scope.dives = diveLogApi.getDives();
-            loading = false;
-            $scope.$apply();
-        }, 1000);
+        $scope.errorMessage = '';
+        diveLogApi.getDives().then(
+            function (data) {
+                $scope.dives = data;
+                loading = false;
+            },
+            function (reason) {
+                $scope.errorMessage = reason;
+                loading = false;
+            }
+        );
     }
 }
 
-function diveLogApi() {
+function diveLogApi($q) {
     var dives = [
         {
             site: 'Abu Gotta Ramada',
@@ -45,9 +52,19 @@ function diveLogApi() {
             time: 62
     }];
 
+    var counter = 0;
     return {
         getDives: function () {
-            return dives;
+            var deferred = $q.defer();
+            counter++;
+            setTimeout(function () {
+                if (counter % 3 == 0) {
+                    deferred.reject('Error: Call counter is ' + counter);
+                } else {
+                    deferred.resolve(dives);
+                }
+            }, 1000);
+            return deferred.promise;
         }
     };
 }
