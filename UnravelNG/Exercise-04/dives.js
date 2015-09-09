@@ -3,7 +3,25 @@ angular.module('diveLog', [])
     .factory('diveLogApi', diveLogApi);
 
 function DiveLogCtrl($scope, diveLogApi) {
-    $scope.dives = diveLogApi.getDives();
+    $scope.dives = [];
+    $scope.isLoading = isLoading;
+    $scope.refreshDives = refreshDives;
+
+    var loading = false;
+
+    function isLoading() {
+        return loading;
+    }
+
+    function refreshDives() {
+        loading = true;
+        $scope.dives = [];
+        setTimeout(function () {
+            $scope.dives = diveLogApi.getDives();
+            loading = false;
+            $scope.$apply();
+        }, 1000);
+    }
 }
 
 function diveLogApi() {
@@ -26,7 +44,7 @@ function diveLogApi() {
             depth: 98,
             time: 62
     }];
-    
+
     return {
         getDives: function () {
             return dives;
