@@ -3,6 +3,7 @@ angular.module('maintenance', ['ngRoute'])
     .controller('mainCtrl', MainCtrl)
     .controller('locationsCtrl', LocationsCtrl)
     .controller('sitesCtrl', SitesCtrl)
+    .controller('typesCtrl', TypesCtrl)
     .factory('currentSpot', currentSpot)
     .directive('ywActiveMenu', ywActiveMenu)
     .directive('ywMenuId', ywMenuId)
@@ -14,6 +15,10 @@ angular.module('maintenance', ['ngRoute'])
         $routeProvider.when('/sites', {
             templateUrl: 'views/sites.html',
             controller: 'sitesCtrl'
+        });
+        $routeProvider.when('/types', {
+            templateUrl: 'views/types.html',
+            controller: 'typesCtrl'
         });
         $routeProvider.otherwise({
             templateUrl: 'views/main.html',
@@ -57,6 +62,8 @@ function MainCtrl(currentSpot) {}
 function LocationsCtrl(currentSpot) {}
 
 function SitesCtrl(currentSpot) {}
+
+function TypesCtrl(currentSpot) {}
 
 function ywActiveMenu(currentSpot) {
     return function (scope, element, attrs) {
