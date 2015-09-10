@@ -1,6 +1,8 @@
 angular.module('diveLog', [])
     .controller('diveLogCtrl', DiveLogCtrl)
-    .factory('diveLogApi', diveLogApi);
+    .factory('diveLogApi', diveLogApi)
+    .constant('apiUrl',
+        'http://unraveling-ng.azurewebsites.net');
 
 function DiveLogCtrl($scope, diveLogApi) {
     $scope.dives = [];
@@ -18,20 +20,19 @@ function DiveLogCtrl($scope, diveLogApi) {
         loading = true;
         $scope.dives = [];
         $scope.errorMessage = '';
-        diveLogApi.getDives().then(
-            function (data) {
+        diveLogApi.getDives()
+            .success(function (data) {
                 $scope.dives = data;
                 loading = false;
-            },
-            function (reason) {
-                $scope.errorMessage = reason;
+            })
+            .error(function () {
+                $scope.errorMessage = 'Request failed';
                 loading = false;
-            }
-        );
+            });
     }
 }
 
-function diveLogApi($q) {
+function diveLogApi($http, apiUrl) {
     var dives = [
         {
             site: 'Abu Gotta Ramada',
@@ -55,16 +56,8 @@ function diveLogApi($q) {
     var counter = 0;
     return {
         getDives: function () {
-            var deferred = $q.defer();
-            counter++;
-            setTimeout(function () {
-                if (counter % 3 == 0) {
-                    deferred.reject('Error: Call counter is ' + counter);
-                } else {
-                    deferred.resolve(dives);
-                }
-            }, 1000);
-            return deferred.promise;
+            var url = apiUrl + '/api/backendtest/dives';
+            return $http.get(url);
         }
     };
 }
