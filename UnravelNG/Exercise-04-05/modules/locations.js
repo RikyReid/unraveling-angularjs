@@ -1,72 +1,71 @@
-﻿angular.module('maintenance')
+angular.module('maintenance')
   .factory('locationsApi', locationsApi)
-  .controller('locationsCtrl', LocationsCtrl);
+  .controller('locationsCtrl', LocationsCtrl)
+  .constant('apiUrl',
+    'http://unraveling-ng.azurewebsites.net/api/dive/location/')
+  .constant('userId',
+    'a5ec120a-c09d-41df-acdb-244e65a6baa8')
+  .constant('userSecret',
+    '71430a7ea1be4f988e634d96d9f2a449aa6600b96d9747b4bf1180b17d632925700e6969831749e686e5d42625823eb2');
 
-function locationsApi($q) {
-  var defaultLocations = [
-    { id: 1, displayName: 'Hurghada, Egypt' },
-    { id: 2, displayName: 'Ecsed, Hungary' },
-    { id: 3, displayName: 'Maehbourg, Mauritius' }
-  ];
+function locationsApi($http, apiUrl,
+  userId, userSecret) {
 
-  var locations = defaultLocations;
-
-  function getLocationIndexById(id) {
-    for (var i = 0; i < locations.length; i++) {
-      if (locations[i].id == id) {
-        return i;
-      }
-    }
-    return -1;
+  function get(param) {
+    return request("GET", param);
   }
 
-  function defer(time, operation) {
-    var deferred = $q.defer();
-    setTimeout(function () {
-      var result = operation();
-      deferred.resolve(result);
-    }, time);
-    return deferred.promise;
+  function post(data) {
+    return request("POST", null, data);
+  }
+
+  function put(data) {
+    return request("PUT", null, data);
+  }
+
+  function del(param) {
+    return request("DELETE", param);
+  }
+
+  function request(verb, param, data) {
+    var req = {
+      method: verb,
+      url: url(param),
+      headers: {
+        'Authorization': getAuthHeader()
+      },
+      data: data
+    }
+    return $http(req);
+  }
+
+  function url(param) {
+    if (param == null || !angular.isDefined(param)) {
+      param = '';
+    }
+    return apiUrl + param;
+  }
+
+  function getAuthHeader() {
+    return "TenantSecret "
+      + userId + "," + userSecret;
   }
 
   return {
     getLocations: function () {
-      return defer(100, function () {
-        return locations.slice(0);
-      })
+      return get();
     },
     getLocationById: function (id) {
-      return defer(10, function () {
-        var itemId = getLocationIndexById(id);
-        if (itemId >= 0) {
-          return locations[itemId];
-        } else {
-          return null;
-        }
-      })
+      return get(id)
     },
     addLocation: function (location) {
-      return defer(1000, function () {
-        var newId = locations.length + 1;
-        location.id = newId;
-        locations.push(location);
-      })
+      return post(location)
     },
     removeLocation: function (id) {
-      return defer(1000, function () {
-        var itemId = getLocationIndexById(id);
-        if (itemId >= 0) {
-          locations.splice(itemId, 1);
-        }
-      })
+      return del(id)
     },
     updateLocation: function (location) {
-      return defer(1000, function () {
-        var itemId = getLocationIndexById(location.id);
-        if (itemId >= 0) {
-          locations[itemId] = location;
-        }
-      })
+      return put(location)
     }
   }
 }
@@ -79,6 +78,7 @@ function LocationsCtrl($scope, locationsApi) {
   var rings = [];
 
   $scope.model = {};
+  $scope.errorMessage = '';
   $scope.isBusy = isBusy;
   $scope.isLoading = isLoading;
   $scope.startAdd = startAdd;
@@ -92,6 +92,7 @@ function LocationsCtrl($scope, locationsApi) {
   $scope.add = add;
   $scope.save = save;
   $scope.remove = remove;
+  $scope.hasError = hasError;
 
   refresh();
 
@@ -118,12 +119,12 @@ function LocationsCtrl($scope, locationsApi) {
     reset();
     selectedId = id;
     editFlag = true;
-    var item;
-    locationsApi.getLocationById(id)
-      .then(function (data) {
-        item = data;
+    for (var i = 0; i < $scope.locations.length; i++) {
+      var item = $scope.locations[i];
+      if (item.id == id) {
         $scope.model.locationBox = item.displayName;
-      });
+      }
+    }
   }
 
   function startRemove(id) {
@@ -137,6 +138,7 @@ function LocationsCtrl($scope, locationsApi) {
     addFlag = false;
     editFlag = false;
     removeFlag = false;
+    $scope.errorMessage = '';
   }
 
   function isInReadMode(id) {
@@ -181,6 +183,10 @@ function LocationsCtrl($scope, locationsApi) {
     })
   }
 
+  function hasError() {
+    return $scope.errorMessage != '';
+  }
+
   function busy(id) {
     if (isBusy(id)) {
       return;
@@ -199,19 +205,46 @@ function LocationsCtrl($scope, locationsApi) {
   function refresh() {
     busy(-2);
     locationsApi.getLocations()
-      .then(function (data) {
+      .success(function (data) {
         $scope.locations = data;
         complete(-2);
-      });
+        $scope.errorMessage = '';
+      })
+      .error(
+        function (errorInfo, status) {
+          setError(errorInfo, status, -2)
+        });
+
     reset();
   }
 
   function useBackend(id, operation) {
     busy(id);
-    operation().then(
-      function (data) {
-        refresh();
-        complete(id);
-      });
+    $scope.errorMessage = '';
+    operation()
+      .success(
+        function (data) {
+          refresh();
+          complete(id);
+        })
+      .error(
+        function (errorInfo, status) {
+          setError(errorInfo, status, id)
+        });
+  }
+
+  function setError(errorInfo, status, id) {
+    reset();
+    complete(id);
+    if (status == 401) {
+      $scope.errorMessage = "Authorization failed."
+    } else if (angular.isDefined(errorInfo.reasonCode)
+        && errorInfo.reasonCode == "TenantLimitExceeded")
+    {
+      $scope.errorMessage =
+          "You cannot add more locations.";
+    } else {
+      $scope.errorMessage = errorInfo.message;
+    }
   }
 }
